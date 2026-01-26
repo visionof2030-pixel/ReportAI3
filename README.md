@@ -2347,11 +2347,14 @@ async function activateTool() {
     }
 
     try {
-        const res = await fetch(BACKEND_URL + "/health", {
-            headers: {
-                "X-Activation-Code": code
-            }
-        });
+        const res = await fetch(BACKEND_URL + "/ask", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Activation-Code": code
+  },
+  body: JSON.stringify({ prompt: "ping" })
+})
 
         if (!res.ok) throw new Error("Invalid");
 

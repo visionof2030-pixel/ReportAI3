@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -1837,8 +1837,7 @@ font-family:Cairo;
 
 <script>
 // ==================== وظائف التفعيل ====================
-
-function activateTool() {
+async function activateTool() {
     const token = document.getElementById("activationInput").value.trim();
 
     if (!token) {
@@ -1846,9 +1845,25 @@ function activateTool() {
         return;
     }
 
-    localStorage.setItem("AI_TOKEN", token);
-    document.getElementById("activationScreen").style.display = "none";
-    showNotification("تم تفعيل الأداة بنجاح! ✓");
+    try {
+        const res = await fetch("https://deep2-0z0k.onrender.com/verify", {
+            headers: {
+                "X-Token": token
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error("INVALID");
+        }
+
+        localStorage.setItem("AI_TOKEN", token);
+        document.getElementById("activationScreen").style.display = "none";
+        showNotification("تم تفعيل الأداة بنجاح ✓");
+
+    } catch (e) {
+        alert("❌ كود التفعيل غير صحيح");
+        localStorage.removeItem("AI_TOKEN");
+    }
 }
 
 // ==================== كائن التقارير ====================
@@ -2584,7 +2599,8 @@ function loadTeacherData() {
 // دالة الذكاء الاصطناعي
 async function fillWithAI() {
     // التحقق من التفعيل أولاً
-    if (!localStorage.getItem("AI_TOKEN")) {
+    const token = localStorage.getItem("AI_TOKEN");
+    if (!token) {
         alert("يرجى تفعيل الأداة أولاً");
         return;
     }
@@ -2667,8 +2683,6 @@ ${count ? `عدد الحضور: ${count}` : ''}
 7. التوصيات
 
 يرجى تقديم الإجابة باللغة العربية الفصحى، وتنظيمها بحيث يكون كل حقل في سطر منفصل يبدأ برقمه فقط دون ذكر العنوان.`;
-
-        const token = localStorage.getItem("AI_TOKEN");
 
         const response = await fetch(backendAIUrl, {
             method: 'POST',
@@ -3107,12 +3121,33 @@ function updateManualDate() {
 }
 
 // عند تحميل الصفحة
-document.addEventListener("DOMContentLoaded", () => {
-    // إخفاء صفحة التفعيل إذا كان هناك توكن مخزن
-    if (localStorage.getItem("AI_TOKEN")) {
-        document.getElementById("activationScreen").style.display = "none";
+document.addEventListener("DOMContentLoaded", async () => {
+
+    const token = localStorage.getItem("AI_TOKEN");
+
+    if (token) {
+        try {
+            const res = await fetch("https://deep2-0z0k.onrender.com/verify", {
+    headers: {
+        "X-Token": token
+    }
+});
+
+            if (!res.ok) throw new Error();
+
+            document.getElementById("activationScreen").style.display = "none";
+
+        } catch {
+            localStorage.removeItem("AI_TOKEN");
+            document.getElementById("activationScreen").style.display = "flex";
+            return; // ⛔ لا تكمل تحميل التطبيق
+        }
+    } else {
+        document.getElementById("activationScreen").style.display = "flex";
+        return; // ⛔ لا تكمل تحميل التطبيق
     }
 
+    // ✅ بعد تفعيل حقيقي فقط
     loadDates();
     loadTeacherData();
     updateReport();
